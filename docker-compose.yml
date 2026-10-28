@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  rain-predictor-dashboard:
+    build: .
+    container_name: bmkg-rain-predictor
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+      - ./powerbi:/app/powerbi
+    environment:
+      - PYTHONUNBUFFERED=1

@@ -1,0 +1,85 @@
+// ==============================================================================
+// Power BI DAX Measures & Meteorological Analytics Formulas
+// Author: Ahmad Fathin Naufal (Universitas Gadjah Mada)
+// Project: Machine Learning Rain Predictor (BMKG Real-Time Classification Pipeline)
+// ==============================================================================
+
+// --- Basic Volume & Event Metrics ---
+Total Observations = 
+COUNTROWS('FactRainfall')
+
+Total Rainy Events (Actual) = 
+CALCULATE(
+    COUNTROWS('FactRainfall'),
+    'FactRainfall'[rainfall_binary] = 1
+)
+
+Rainfall Occurrence Rate % = 
+DIVIDE([Total Rainy Events (Actual)], [Total Observations], 0)
+
+Total Predicted Rain Events = 
+CALCULATE(
+    COUNTROWS('FactRainfall'),
+    'FactRainfall'[pred_rainfall_binary] = 1
+)
+
+// --- Machine Learning Evaluation Metrics (Matching CV >80% Claim) ---
+Classification Accuracy % = 
+VAR CorrectPredictions = 
+    CALCULATE(
+        COUNTROWS('FactRainfall'),
+        'FactRainfall'[rainfall_binary] = 'FactRainfall'[pred_rainfall_binary]
+    )
+RETURN
+    DIVIDE(CorrectPredictions, [Total Observations], 0)
+
+True Positives (Hits) = 
+CALCULATE(
+    COUNTROWS('FactRainfall'),
+    'FactRainfall'[rainfall_binary] = 1 && 'FactRainfall'[pred_rainfall_binary] = 1
+)
+
+False Positives (False Alarms) = 
+CALCULATE(
+    COUNTROWS('FactRainfall'),
+    'FactRainfall'[rainfall_binary] = 0 && 'FactRainfall'[pred_rainfall_binary] = 1
+)
+
+False Negatives (Misses) = 
+CALCULATE(
+    COUNTROWS('FactRainfall'),
+    'FactRainfall'[rainfall_binary] = 1 && 'FactRainfall'[pred_rainfall_binary] = 0
+)
+
+True Negatives (Correct Rejections) = 
+CALCULATE(
+    COUNTROWS('FactRainfall'),
+    'FactRainfall'[rainfall_binary] = 0 && 'FactRainfall'[pred_rainfall_binary] = 0
+)
+
+// --- Meteorological Verification Statistics (WMO Standard) ---
+Probability of Detection (POD / Recall) = 
+DIVIDE([True Positives (Hits)], [True Positives (Hits)] + [False Negatives (Misses)], 0)
+
+False Alarm Ratio (FAR) = 
+DIVIDE([False Positives (False Alarms)], [Total Predicted Rain Events], 0)
+
+Precision % = 
+DIVIDE([True Positives (Hits)], [True Positives (Hits)] + [False Positives (False Alarms)], 0)
+
+Critical Success Index (CSI / Threat Score) = 
+DIVIDE(
+    [True Positives (Hits)],
+    [True Positives (Hits)] + [False Negatives (Misses)] + [False Positives (False Alarms)],
+    0
+)
+
+// --- Thermodynamic Averages ---
+Average Relative Humidity % = 
+AVERAGE('FactRainfall'[humidity_pct])
+
+Average Ambient Temperature C = 
+AVERAGE('FactRainfall'[temp_c])
+
+Average Dew Point Spread C = 
+AVERAGE('FactRainfall'[dew_spread_c])
